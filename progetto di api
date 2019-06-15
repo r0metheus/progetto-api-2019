@@ -2,18 +2,19 @@ Progetto di API
 
 Struttura dati: grafo orientato e pesato (diverso peso, diverso tipo di relazioni)
 
-addent <id_ent>: 
+addent <id_ent>: (FATTO)
 	- aggiungi il nodo "id_ent" al grafo
 
 delent <id_ent>:
 	- elimina il nodo "id_ent" dal grafo, insieme a tutte le relazioni entranti e uscenti da esso
+	(cancella tutti i nodi del vertex e in più cancella id_ent in tutti gli altri nodi)
 
-addrel <id_orig><id_dest><id_rel>:
+addrel <id_orig><id_dest><id_rel>: (FATTO)
 	- aggiunge una relazione di tipo "id_rel" che parte dal nodo id_orig e termina nel nodo id_dest
 	- se la relazione esiste non fa nulla
 	- se almeno uno dei due nodi non è stato aggiunto in precedenza (non è presente nel grafo) allora non fa nulla
 
-delrel <id_orig><id_dest><id_rel>:
+delrel <id_orig><id_dest><id_rel>: (FATTO)
 	- elimina la relazione (nel verso specificato)
 
 report:
