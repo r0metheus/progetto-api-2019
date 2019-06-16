@@ -22,7 +22,7 @@ report:
 	- output del tipo: <id_rel1><id_ent1><n_rel1_entranti>; <id_rel2><id_ent2><n_rel2_entranti>;
 	- nel caso di entità multiple con numero massimo di archi entranti si scrive:
 		<id_rel1><id_ent1_1><id_ent1_2>... <n_rel1_entranti>; ...
-	- se non ci sono relazioni tra le entità l'output è "none", senza apici
+	- se non ci sono relazioni tra le entità l'output è "none", senza apici	- OK
 
 end:
 	- termine sequenza
