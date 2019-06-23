@@ -36,7 +36,8 @@ void sortHistory();
 
 
 
-
+void addent_to_history(char *id_ent);
+void delent_from_history(char *id_ent);
 
 
 //DEBUG
@@ -49,6 +50,9 @@ void print_relations();
 vertex_t *HEAD = NULL;
 char relationsHistory[MAX][MAX];
 int relationCounter = 0;
+
+char entitiesHistory[MAX][MAX];
+int entitiesCounter = 0;
 
 /* MAIN */
 int main (int argc, char** argv){
@@ -126,14 +130,20 @@ void addent(char* id_ent){				// DO NOT TOUCH
 	if(vertexExists(id_ent))
 		return;
 
-	if(HEAD==NULL)
-		HEAD = new_vertex(id_ent, NULL, NULL);
-
 	else{
+		addent_to_history(id_ent);
 
-		for(current = HEAD; current->next!=NULL; current = current->next);
-		current->next = new_vertex(id_ent, NULL, current);
+		if(HEAD==NULL)
+			HEAD = new_vertex(id_ent, NULL, NULL);
+
+		else{
+
+			for(current = HEAD; current->next!=NULL; current = current->next);
+			current->next = new_vertex(id_ent, NULL, current);
+		}
+
 	}
+
 }
 
 bool vertexExists(char* id_ent){				// DO NOT TOUCH
@@ -320,6 +330,8 @@ void delent(char* id_ent){								// DO NOT TOUCH
 	if(!vertexExists(id_ent))
 		return;
 
+	delent_from_history(id_ent);
+
 	for(current = HEAD; current!=NULL && strcmp(current->id_ent, id_ent)!=0; current = current->next);
 
 	if(current==HEAD){
@@ -379,11 +391,12 @@ int numRelPerEntities(char *id_dest, char * id_rel){
 }
 
 void report(){
-	vertex_t *tmp_none, *current_vertex;
+	vertex_t *tmp_none;
 	int relation_c = 0, max = 0, tmp;
 	char id_rel[255];
 	char entities[MAX][MAX];
 	int i, j, m;
+	int index;
 
 	for(tmp_none=HEAD; tmp_none!=NULL; tmp_none = tmp_none->next)
 		if(tmp_none->next_node!=NULL)
@@ -395,18 +408,18 @@ void report(){
 	for(i=0; i<relationCounter; i++){
 		strcpy(id_rel, relationsHistory[i]);
 
-		for(current_vertex = HEAD; current_vertex!=NULL; current_vertex = current_vertex->next){
-			tmp = numRelPerEntities(current_vertex->id_ent, relationsHistory[i]);
+		for(index = 0; index<entitiesCounter; index++){
+			tmp = numRelPerEntities(entitiesHistory[index], relationsHistory[i]);
 			if(tmp>=max)
 				max = tmp;
 
 		}
 
 
-		for(current_vertex = HEAD; current_vertex!=NULL; current_vertex = current_vertex->next){
-			tmp = numRelPerEntities(current_vertex->id_ent, relationsHistory[i]);
+		for(index = 0; index<entitiesCounter; index++){
+			tmp = numRelPerEntities(entitiesHistory[index], relationsHistory[i]);
 			if(tmp==max && tmp!=0){
-				strcpy(entities[j], current_vertex->id_ent);
+				strcpy(entities[j], entitiesHistory[index]);
 				j++;
 			}
 		}
@@ -444,13 +457,61 @@ RESET:
 
 }
 
+
+
+void addent_to_history(char *id_ent){
+	strcpy(entitiesHistory[entitiesCounter], id_ent);
+	entitiesCounter++;
+
+	return;
+
+}
+
+void delent_from_history(char *id_ent){
+	int i, j;
+	char tmp[MAX];
+
+	for(i=0; i<entitiesCounter; i++)
+		if(strcmp(entitiesHistory[i], id_ent)==0)
+			break;
+
+	strcpy(entitiesHistory[i], "");
+
+
+
+
+
+
+	for(i=0; i<entitiesCounter; i++){
+		for(j=0; j<entitiesCounter-i-1; j++)
+			if(strcmp(entitiesHistory[j], "")==0){
+				strcpy(tmp, entitiesHistory[j+1]);
+				strcpy(entitiesHistory[j+1], "");
+				strcpy(entitiesHistory[j], tmp);
+			}
+		}
+
+		entitiesCounter--;
+
+
+}
+
+
+
+
+
+
+
+
+
+// DEBUG
 void print_relations(){
 	int i;
 	printf("\n##########\n");
-	printf("Relations History: \n");
+	printf("Entities History: \n");
 
-	for(i=0; i<relationCounter; i++)
-		printf("%s, ", *(relationsHistory+i));
+	for(i=0; i<entitiesCounter; i++)
+		printf("%s, ", *(entitiesHistory+i));
 
 }
 
