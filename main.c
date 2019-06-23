@@ -364,16 +364,6 @@ void delent(char* id_ent){								// DO NOT TOUCH
 
 
 
-
-
-
-
-
-
-
-
-
-
 int numRelPerEntities(char *id_dest, char * id_rel){
 	vertex_t *current_vertex;
 	node_t *current_node;
@@ -393,11 +383,10 @@ int numRelPerEntities(char *id_dest, char * id_rel){
 
 void report(){
 	vertex_t *tmp_none, *current_vertex;
-	//relation_t *tmp_relation = ROOT;
 	int relation_c = 0, max = 0, tmp;
 	char id_rel[255];
-	char id_ent[255];
-
+	char entities[MAX][MAX];
+	int i, j, m;
 
 	for(tmp_none=HEAD; tmp_none!=NULL; tmp_none = tmp_none->next)
 		if(tmp_none->next_node!=NULL)
@@ -406,29 +395,54 @@ void report(){
 	if(relation_c==0)
 		printf("none");
 
-	/*for(tmp_relation = ROOT; tmp_relation!=NULL; tmp_relation = tmp_relation->next){
-		strcpy(id_rel, tmp_relation->id_rel);
+	for(i=0; i<relationCounter; i++){
+		strcpy(id_rel, relationsHistory[i]);
+
 		for(current_vertex = HEAD; current_vertex!=NULL; current_vertex = current_vertex->next){
-			tmp = numRelPerEntities(current_vertex->id_ent, tmp_relation->id_rel);
+			tmp = numRelPerEntities(current_vertex->id_ent, relationsHistory[i]);
 			if(tmp>=max){
 				max = tmp;
-				strcpy(id_ent, current_vertex->id_ent);
+			//	strcpy(id_ent, current_vertex->id_ent);
 			}
 		}
-		printf("%s %s %d; ", id_rel, id_ent, max);
+		for(current_vertex = HEAD; current_vertex!=NULL; current_vertex = current_vertex->next){
+			tmp = numRelPerEntities(current_vertex->id_ent, relationsHistory[i]);
+			if(tmp==max){
+				strcpy(entities[j], current_vertex->id_ent);
+				j++;
+			}
+		}
+
+		printf("%s ", id_rel);
+		for(m=0; m<j; m++)
+			printf("%s ", entities[m]);
+		printf("%d; ", max);
+
+
+
+
+
+
+
+
 		max = 0;
 		tmp = max;
+		j=0;
+
+		int k;
+		for(k=0; k<MAX; k++)
+			strcpy(entities[k], "");
+
 
 	}
 	printf("\n");
-*/
 
 
 
 
-	print_relations();
+	//print_relations();
 
-	print_graph();
+	//print_graph();
 
 
 }
