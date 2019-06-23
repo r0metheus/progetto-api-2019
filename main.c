@@ -211,6 +211,24 @@ void sortHistory(){														// DO NOT TOUCH
 
 }
 
+void sortEntities(){														// DO NOT TOUCH
+	char tmp[MAX];
+	int i, j;
+
+	for(i=0; i<entitiesCounter; i++){
+		for(j=0; j<entitiesCounter-i-1; j++){
+			if(strcmp(entitiesHistory[j], entitiesHistory[j+1])>=0){
+				strcpy(tmp, entitiesHistory[j]);
+				strcpy(entitiesHistory[j], entitiesHistory[j+1]);
+				strcpy(entitiesHistory[j+1], tmp);
+
+			}
+
+		}
+	}
+
+}
+
 bool relationExistsInHistory(char *id_rel){								// DO NOT TOUCH
 	int i;
 
@@ -463,6 +481,8 @@ void addent_to_history(char *id_ent){
 	strcpy(entitiesHistory[entitiesCounter], id_ent);
 	entitiesCounter++;
 
+	sortEntities();
+
 	return;
 
 }
@@ -476,11 +496,6 @@ void delent_from_history(char *id_ent){
 			break;
 
 	strcpy(entitiesHistory[i], "");
-
-
-
-
-
 
 	for(i=0; i<entitiesCounter; i++){
 		for(j=0; j<entitiesCounter-i-1; j++)
