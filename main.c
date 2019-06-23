@@ -361,9 +361,6 @@ void delent(char* id_ent){								// DO NOT TOUCH
 
 }
 
-
-
-
 int numRelPerEntities(char *id_dest, char * id_rel){
 	vertex_t *current_vertex;
 	node_t *current_node;
@@ -400,29 +397,29 @@ void report(){
 
 		for(current_vertex = HEAD; current_vertex!=NULL; current_vertex = current_vertex->next){
 			tmp = numRelPerEntities(current_vertex->id_ent, relationsHistory[i]);
-			if(tmp>=max){
+			if(tmp>=max)
 				max = tmp;
-			//	strcpy(id_ent, current_vertex->id_ent);
-			}
+
 		}
+
+
 		for(current_vertex = HEAD; current_vertex!=NULL; current_vertex = current_vertex->next){
 			tmp = numRelPerEntities(current_vertex->id_ent, relationsHistory[i]);
-			if(tmp==max){
+			if(tmp==max && tmp!=0){
 				strcpy(entities[j], current_vertex->id_ent);
 				j++;
 			}
 		}
+
+		if(max == 0)
+			goto RESET;
 
 		printf("%s ", id_rel);
 		for(m=0; m<j; m++)
 			printf("%s ", entities[m]);
 		printf("%d; ", max);
 
-
-
-
-
-
+RESET:
 
 
 		max = 0;
