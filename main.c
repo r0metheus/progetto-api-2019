@@ -4,97 +4,94 @@
 #include <string.h>
 
 #define MAX 255
+#define CMD_MAX 7
 
 typedef struct history{
     char id_rel[MAX];
     int num;
-    struct history *next_history;
-    struct history *prev_history;
+    struct history *next;
+    struct history *prev;
 } historyNode_t;
 
 typedef struct node {
     char id_dest[MAX];
     char id_rel[MAX];
-    struct node *next_node;
-    struct node *prev_node;
+    struct node *next;
+    struct node *prev;
 } node_t;
 
 typedef struct vertex {
     char id_ent[MAX];
-    struct vertex *next_vertex;
-    struct vertex *prev_vertex;
+    struct vertex *next;
+    struct vertex *prev;
     struct node *head_node;
     struct history *head_history;
 } vertex_t;
 
-/* UTILITIES */
-
+/* COSTRUTTORI */
 vertex_t *new_vertex(char *id_ent, vertex_t *next, vertex_t *prev);
 node_t *new_node(char *id_rel, char *id_dest, node_t *next, node_t *prev);
-historyNode_t *new_historyNode(char *id_rel, int num, historyNode_t *next_history, historyNode_t *prev_history);
+historyNode_t *new_historyNode(char *id_rel, historyNode_t *next, historyNode_t *prev);
 
-
-
-bool vertexExists(char *id_ent);
-bool relExists(char *id_orig, char *id_dest, char *id_rel);
-bool relationExistsInHistory(char *id_rel);
+/* UTILITIES */
+bool vertexExists(vertex_t **head, char *id_ent);
+bool relExists(vertex_t **head, char *id_orig, char *id_dest, char *id_rel);
+bool historyExists(vertex_t *vertex, char *id_rel);
+void updateHistory(vertex_t *vertex, char *id_rel, int update);
+vertex_t *returnVertex(vertex_t **head, char *id);
+node_t *returnNode(vertex_t **head, char *father, char *id);
+node_t *returnNodeWithRel(vertex_t **head, char *father, char *id, char *id_rel);
 
 /* CORE */
-void addent(char *id_ent);
-void delent(char *id_ent);
-void addrel(char *id_orig, char *id_dest, char *id_rel);
-void delrel(char *id_orig, char *id_dest, char *id_rel);
-void report();
+void addent(vertex_t **head, char *id_ent);
+void delent(vertex_t **head, char *id_ent);
+void addrel(vertex_t **head, char *id_orig, char *id_dest, char *id_rel);
+void delrel(vertex_t **head, char *id_orig, char *id_dest, char *id_rel);
+void report(vertex_t **head);
 
 
-void updateHistory(vertex_t *id, char *id_rel, int update);
+// DEBUG
 
-int numRelPerEntities(char *id_dest, char *id_rel);
+void print_graph(vertex_t **head);
 
-
-//DEBUG
-void print_graph();
-
-vertex_t *HEAD = NULL;
-
-/* MAIN */
 int main(int argc, char **argv) {
-    char cmd[7];
+    char cmd[CMD_MAX];
     char arg0[MAX];
     char arg1[MAX];
     char arg2[MAX];
+    vertex_t *HEAD = NULL;
 
     for (;;) {
         scanf("%s", cmd);
 
-        if (strncmp("report", cmd, 6) == 0)
-            report();
+        if (strncmp("report", cmd, CMD_MAX-1) == 0)
+            report(&HEAD);
 
-        if (strncmp("end", cmd, 6) == 0) {
+        if (strncmp("end", cmd, CMD_MAX-1) == 0) {
             break;
         }
 
-        if (strncmp("addent", cmd, 6) == 0) {
+        if (strncmp("addent", cmd, CMD_MAX-1) == 0) {
             scanf("%s", arg0);
-            addent(arg0);
+            addent(&HEAD, arg0);
         }
 
-        if (strncmp("delent", cmd, 6) == 0) {
+        if (strncmp("delent", cmd, CMD_MAX-1) == 0) {
             scanf("%s", arg0);
-            delent(arg0);
+            delent(&HEAD, arg0);
         }
 
-        if (strncmp("addrel", cmd, 6) == 0) {
+        if (strncmp("addrel", cmd, CMD_MAX-1) == 0) {
             scanf("%s %s %s", arg0, arg1, arg2);
-            addrel(arg0, arg1, arg2);
+            addrel(&HEAD, arg0, arg1, arg2);
         }
 
-        if (strncmp("delrel", cmd, 6) == 0) {
+        if (strncmp("delrel", cmd, CMD_MAX-1) == 0) {
             scanf("%s %s %s", arg0, arg1, arg2);
-            delrel(arg0, arg1, arg2);
+            delrel(&HEAD, arg0, arg1, arg2);
         }
 
-        strncpy(cmd, "", 7);
+        strncpy(cmd, "", CMD_MAX);
         strncpy(arg0, "", MAX);
         strncpy(arg1, "", MAX);
         strncpy(arg2, "", MAX);
@@ -104,72 +101,64 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+/* COSTRUTTORI */
+vertex_t *new_vertex(char *id_ent, vertex_t *next, vertex_t *prev){
+  vertex_t *new_vertex = malloc(sizeof(vertex_t));
 
+  strcpy(new_vertex->id_ent, id_ent);
+  new_vertex->next = next;
+  new_vertex->prev = prev;
+  new_vertex->head_node = NULL;
+  new_vertex->head_history = NULL;
 
-/* UTILITIES */
+  return new_vertex;
 
-vertex_t *new_vertex(char *id_ent, vertex_t *next, vertex_t *prev) {
-    vertex_t *new_vertex = malloc(sizeof(vertex_t));
-
-    strcpy(new_vertex->id_ent, id_ent);
-    new_vertex->head_node = NULL;
-    new_vertex->head_history = NULL;
-    new_vertex->next_vertex = next;
-    new_vertex->prev_vertex = prev;
-
-    return new_vertex;
 }
-
 node_t *new_node(char *id_rel, char *id_dest, node_t *next, node_t *prev) {
     node_t *new_node = malloc(sizeof(node_t));
 
     strcpy(new_node->id_dest, id_dest);
     strcpy(new_node->id_rel, id_rel);
-    new_node->next_node = next;
-    new_node->prev_node = prev;
+    new_node->next = next;
+    new_node->prev = prev;
 
     return new_node;
 }
-
-historyNode_t *new_historyNode(char *id_rel, int num, historyNode_t *next_history, historyNode_t *prev_history){
+historyNode_t *new_historyNode(char *id_rel, historyNode_t *next, historyNode_t *prev){
   historyNode_t *new_history = malloc(sizeof(historyNode_t));
 
   strcpy(new_history->id_rel, id_rel);
-  new_history->num = num;
-  new_history->next_history = next_history;
-  new_history->prev_history = prev_history;
+  new_history->num = 1;
+  new_history->next = next;
+  new_history->next = prev;
 
   return new_history;
 
 }
 
-bool vertexExists(char *id_ent) {
-    vertex_t *current_vertex;
+/* UTILITIES */
+bool vertexExists(vertex_t **head, char *id_ent){
+  vertex_t *current_vertex;
 
-    for (current_vertex = HEAD; current_vertex != NULL; current_vertex = current_vertex->next_vertex)
-        if (strcmp(current_vertex->id_ent, id_ent) == 0)
-            return true;
+  for (current_vertex = *head; current_vertex != NULL; current_vertex = current_vertex->next)
+    if (strcmp(current_vertex->id_ent, id_ent) == 0)
+      return true;
 
-    return false;
+  return false;
 }
+bool relExists(vertex_t **head, char *id_orig, char *id_dest, char *id_rel){
+  vertex_t *current_vertex;
+  node_t *current_node;
 
-bool relExists(char *id_orig, char *id_dest, char *id_rel) {
-    vertex_t *current_vertex;
-    node_t *current_node;
+  for (current_vertex = *head; current_vertex != NULL; current_vertex = current_vertex->next)
+    if (strcmp(current_vertex->id_ent, id_orig) == 0)
+      break;
 
-    for (current_vertex = HEAD; current_vertex != NULL; current_vertex = current_vertex->next_vertex) {
-        if (strcmp(current_vertex->id_ent, id_orig) == 0)
-            break;
-    }
-
-    if (current_vertex == NULL)
-        return false;
-
-    if (current_vertex->head_node == NULL)
+    if (current_vertex == NULL || current_vertex->head_node == NULL)
         return false;
 
     else {
-        for (current_node = current_vertex->head_node; current_node != NULL; current_node = current_node->next_node)
+        for (current_node = current_vertex->head_node; current_node != NULL; current_node = current_node->next)
             if (strcmp(current_node->id_rel, id_rel) == 0 && strcmp(current_node->id_dest, id_dest) == 0)
                 return true;
 
@@ -177,242 +166,242 @@ bool relExists(char *id_orig, char *id_dest, char *id_rel) {
     }
 }
 
+bool historyExists(vertex_t *vertex, char *id_rel){
+  historyNode_t *current_history;
+
+  for(current_history = vertex->head_history; current_history!=NULL; current_history = current_history->next)
+    if(strcmp(current_history->id_rel, id_rel)==0)
+      return true;
+
+  return false;
+
+}
+
+void updateHistory(vertex_t *vertex, char *id_rel, int update){
+  historyNode_t *current_history = vertex->head_history, *next, *new, *tmp_history;
+
+  if(!historyExists(vertex, id_rel) && update==1){
+    if(current_history==NULL || strcmp(current_history->id_rel, id_rel)>0)
+    vertex->head_history = new_historyNode(id_rel, current_history, NULL);
+
+    else{
+    for(current_history = vertex->head_history; current_history->next!=NULL && strcmp(current_history->next->id_rel, id_rel)<=0; current_history = current_history->next);
+    
+    next = current_history->next;
+    new = new_historyNode(id_rel, next, current_history);
+    current_history->next = new;
+
+    if(next!=NULL)
+      next->prev = new;
+  }
+
+}
+
+  else{
+    for(current_history = vertex->head_history; current_history->next!=NULL && strcmp(current_history->id_rel, id_rel)!=0; current_history = current_history->next);
+    tmp_history = current_history;
+
+    if(current_history->num+update==0){
+      if(vertex->head_history == tmp_history)
+        vertex->head_history = tmp_history->next;
+      if(tmp_history->next!=NULL)
+        tmp_history->next->prev = tmp_history->prev;
+      if (tmp_history->prev!=NULL)
+        tmp_history->prev->next = tmp_history->next;
+
+      free(tmp_history);
+    }
 
 
+    else{
+      current_history->num += update; 
+    }
 
+  }
 
+}
 
+vertex_t *returnVertex(vertex_t **head, char *id){
+  vertex_t *current = *head;
 
+  for(current = *head; current!=NULL && strcmp(current->id_ent, id) != 0; current = current->next);
 
+  if (current==NULL)
+    return NULL;
+  else
+    return current;
+}
+
+node_t *returnNode(vertex_t **head, char *father, char *id){
+    vertex_t *current = returnVertex(head, father);
+    node_t *current_node;
+
+    for(current_node = current->head_node; current_node!=NULL && strcmp(current_node->id_dest, id) != 0; current_node = current_node->next);
+
+    if (current_node==NULL)
+      return NULL;
+    else
+      return current_node;
+}
+
+node_t *returnNodeWithRel(vertex_t **head, char *father, char *id, char *id_rel){
+    vertex_t *current = returnVertex(head, father);
+    node_t *current_node;
+
+    for(current_node = current->head_node; current_node!=NULL; current_node = current_node->next){
+      if(strcmp(current_node->id_dest, id) == 0 && strcmp(current_node->id_rel, id_rel) == 0)
+        break;
+    }
+
+    if (current_node==NULL)
+      return NULL;
+    else
+      return current_node;
+}
 
 
 /* CORE */
+void addent(vertex_t **head, char *id_ent){
+  vertex_t *current_vertex = *head, *next, *new;
 
-void addent(char *id_ent) {
-
-    vertex_t *current_vertex = HEAD, *next, *new;
-
-    if (vertexExists(id_ent))
+  if (vertexExists(head, id_ent))
         return;
+
+  else{
+    if (current_vertex == NULL || strcmp(current_vertex->id_ent, id_ent) > 0)
+      *head = new_vertex(id_ent, current_vertex, NULL);
 
     else {
+      for (current_vertex = *head; current_vertex->next != NULL && strcmp(current_vertex->next->id_ent, id_ent) <= 0; current_vertex = current_vertex->next);
 
-        if (current_vertex == NULL || strcmp(current_vertex->id_ent, id_ent) > 0)
-            HEAD = new_vertex(id_ent, current_vertex, NULL);
+      next = current_vertex->next;
+      new = new_vertex(id_ent, next, current_vertex);
+      current_vertex->next = new;
 
-        else {
-
-            for (current_vertex = HEAD; current_vertex->next_vertex != NULL && strcmp(current_vertex->next_vertex->id_ent, id_ent) <= 0; current_vertex = current_vertex->next_vertex);
-            next = current_vertex->next_vertex;
-
-            new = new_vertex(id_ent, next, current_vertex);
-            current_vertex->next_vertex = new;
-            if (next != NULL)
-                next->prev_vertex = new;
-        }
-
+      if (next != NULL)
+        next->prev = new;
     }
 
+  }
 }
 
-void delent(char *id_ent) {
-    vertex_t *current = HEAD, *tmp_vertex;
-    relHistory_t *tmp_history;
+void delent(vertex_t **head, char *id_ent) {
+    vertex_t *current = *head, *tmp_vertex;
+    historyNode_t *current_history;
 
-    if (!vertexExists(id_ent))
+    if (!vertexExists(head, id_ent) || *head == NULL)
         return;
 
-    for (current = HEAD; current != NULL && strcmp(current->id_ent, id_ent) != 0; current = current->next);
-    tmp_vertex = current;
+    else{
 
-    for (current = HEAD; current!=NULL; current = current->next) {
-        for (tmp_history = current->head; tmp_history!=NULL; tmp_history = tmp_history->next) {
-            delrel(id_ent, current->id_ent, tmp_history->id_rel);
-        }
-    }
+      for (current = *head; current!=NULL && strcmp(current->id_ent, id_ent) != 0; current = current->next);
+      tmp_vertex = current;
 
-    if (tmp_vertex == HEAD)
-        HEAD = tmp_vertex->next;
-    if (tmp_vertex->next != NULL)
-        tmp_vertex->next->prev = tmp_vertex->prev;
-    if (tmp_vertex->prev != NULL)
-        tmp_vertex->prev->next = tmp_vertex->next;
-
-    free(tmp_vertex);
-
-}
-
-void addrel(char *id_orig, char *id_dest, char *id_rel) {
-
-    if (!vertexExists(id_orig)) {
-        return;
-    }
-
-    if (!vertexExists(id_dest)) {
-        return;
-    }
-
-    if(!(strcmp(id_orig, id_dest)))
-        return;
-
-    if (relExists(id_orig, id_dest, id_rel))
-        return;
-
-    vertex_t *current_vertex;
-
-    node_t *current_node, *next, *new;
-
-    for (current_vertex = HEAD; current_vertex!=NULL && strcmp(current_vertex->id_ent, id_orig) != 0; current_vertex = current_vertex->next_vertex);
-
-    if (current_vertex->head_node == NULL || strcmp(current_vertex->head_node->id_dest, id_dest) > 0)
-        current_vertex->head_node = new_node(id_rel, id_dest, NULL, NULL);
-
-    else {
-        for (current_node = current_vertex->head_node; current_node->next_node != NULL && strcmp(current_node->next_node->id_dest, id_dest) <= 0; current_node = current_node->next_node);
-        next = current_node->next_node;
-        new = new_node(id_rel, id_dest, next, current_node);
-
-        current_node->next_node = new;
-        if(next!=NULL)
-            next->prev_node = new;
-    }
-
-    updateHistory(current_vertex, id_rel, 1);
-
-}
-
-void delrel(char *id_orig, char *id_dest, char *id_rel) {
-
-    if (!relExists(id_orig, id_dest, id_rel)) {
-        return;
-    }
-
-    vertex_t *current_vertex;
-    node_t *current_node, *tmp;
-
-    for (current_vertex = HEAD; strcmp(current_vertex->id_ent, id_orig) != 0; current_vertex = current_vertex->next_vertex);
-
-    current_node = current_vertex->head_node;
-
-    if (current_node->next_node == NULL && current_node->prev_node == NULL && strcmp(current_node->id_dest, id_dest) == 0 && strcmp(current_node->id_rel, id_rel) == 0) {
-        free(current_node);
-        current_vertex->head_node = NULL;
-
-    }
-
-    else {
-            for (current_node = current_vertex->head_node;
-                 current_node != NULL; current_node = current_node->next_node) {
-                if (strcmp(current_node->id_dest, id_dest) == 0 && strcmp(current_node->id_rel, id_rel) == 0)
-                    break;
-            }
-
-            tmp = current_node;
-
-            if (current_node->prev_node == NULL) {
-                current_vertex->head_node = current_node->next_node;
-                (current_node->next_node)->prev_node = NULL;
-
-                free(tmp);
-
-            } else {
-
-                if (current_node->next_node == NULL) {
-                    (current_node->prev_node)->next_node = NULL;
-                    free(tmp);
-
-                } else {
-
-                    (current_node->prev_node)->next_node = tmp->next_node;
-                    (current_node->next_node)->prev_node = tmp->prev_node;
-                    free(tmp);
-                }
-            }
-
-        }
-
-    updateHistory(current_vertex, id_rel, -1);
-
-}
-
-void updateHistory(vertex_t *id, char *id_rel, int update){
-    vertex_t *current_vertex = id;
-    historyNode_t *current_history = id->head_history, *prev;
-    historyNode_t *new_history;
-
-    if (update==1){
-      if(current_history==NULL)
-        current_history = new_historyNode(id_rel, update, NULL, NULL);
-
-      else{
-
-    for(current_history = id->head_history; current_history!=NULL && strcmp(id_rel, current_history->id_rel)!=0; current_history = current_history->next_history)
-      prev = current_history;
-
-        if(current_history==NULL)
-          current_history = new_historyNode(id_rel, update, NULL, prev);
-        else
-            current_history->num += update;
-      }
-
-
-    if (update==-1){
-      if(current_history==NULL)
-        return;
-
-      else{
-        for(current_history = id->head_history; current_history!=NULL && strcmp(id_rel, current_history->id_rel)!=0; current_history = current_history->next_history)
-          prev = current_history;
-
-        if(current_history->num + update == 0){
-          current_history->prev_history->next_history = current_history->next_history;
-          current_history->next_history->prev_history = prev;
-        }
+      for (current = *head; current!=NULL; current = current->next) {
+        if(current->head_history==NULL)
+          continue;
         else{
-          current_history->num += update;
+          for (current_history = current->head_history; current_history!=NULL; current_history = current_history->next)
+            delrel(head, id_ent, current->id_ent, current_history->id_rel);
         }
       }
 
+      if (*head == tmp_vertex)
+          *head = tmp_vertex->next;
+      if (tmp_vertex->next != NULL)
+          tmp_vertex->next->prev = tmp_vertex->prev;
+      if (tmp_vertex->prev != NULL)
+          tmp_vertex->prev->next = tmp_vertex->next;
 
+      free(tmp_vertex);
+
+      return;
 
     }
 
 }
 
+void addrel(vertex_t **head, char *id_orig, char *id_dest, char *id_rel) {
+
+  if (!vertexExists(head, id_orig) || !vertexExists(head, id_dest) || !(strcmp(id_orig, id_dest)) || relExists(head, id_orig, id_dest, id_rel))
+      return;
+
+  vertex_t *current_vertex, *toBeUpdated;
+
+  node_t *current_node, *next, *new;
 
 
-void report() {
-    vertex_t *tmp_none, *current;
-    int relation_c = 0, max = 0, tmp;
-    char entities[MAX][MAX];
-    int j, m;
+  current_vertex = returnVertex(head, id_orig);
+  toBeUpdated = returnVertex(head, id_dest);
+
+  if (current_vertex->head_node == NULL || strcmp(current_vertex->head_node->id_dest, id_dest) > 0)
+      current_vertex->head_node = new_node(id_rel, id_dest, NULL, NULL);
+
+  else {
+      for (current_node = current_vertex->head_node; current_node->next != NULL && strcmp(current_node->next->id_dest, id_dest) <= 0; current_node = current_node->next);
+      next = current_node->next;
+      new = new_node(id_rel, id_dest, next, current_node);
+
+      current_node->next = new;
+      if(next!=NULL)
+          next->prev = new;
+  }
+
+  updateHistory(toBeUpdated, id_rel, 1);
+
+    return;
+}
+
+void delrel(vertex_t **head, char *id_orig, char *id_dest, char *id_rel) {
+  if (!relExists(head, id_orig, id_dest, id_rel))
+    return;
+  if (!vertexExists(head, id_orig))
+    return;
+  if (!vertexExists(head, id_dest))
+    return;
+
+  vertex_t *current = *head, *toBeUpdated;
+  node_t *current_node, *tmp_node;
+
+  current = returnVertex(head, id_orig);
+  toBeUpdated = returnVertex(head, id_dest);
+  current_node = returnNodeWithRel(head, id_orig, id_dest, id_rel);
+
+  tmp_node = current_node;
+
+  if(current->head_node == tmp_node)
+    current->head_node = tmp_node->next;
+  if (tmp_node->next!=NULL)
+    tmp_node->next->prev = tmp_node->prev;
+  if(tmp_node->prev != NULL)
+    tmp_node->prev->next = tmp_node->next;
 
 
-    for (tmp_none = HEAD; tmp_none != NULL; tmp_none = tmp_none->next)
-        if (tmp_none->next_node != NULL)
+  free(tmp_node);
+
+  updateHistory(toBeUpdated, id_rel, -1);
+
+
+  return;
+}
+
+void report(vertex_t **head) {
+    vertex_t *current_vertex;
+    int relation_c = 0;
+
+/*
+    for (current_vertex = HEAD; current_vertex != NULL; current_vertex = current_vertex->next)
+        if (current_vertex->head_node != NULL)
             relation_c++;
 
     if (relation_c == 0)
         printf("none");
+*/
 
-
-
-
-
-
-    print_graph();
+    print_graph(head);
 
 
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -420,29 +409,32 @@ void report() {
 
 // DEBUG
 
-void print_graph() {
-    vertex_t *tmp;
-    node_t *tmp_node;
-    int i;
+void print_graph(vertex_t **head){
+  vertex_t *current_vertex;
+  node_t *current_node;
+  historyNode_t *current_history;
 
-    printf("##########\n");
+  printf("#####\n");
 
-    if (HEAD == NULL)
-        printf("Void graph.\n");
+  if(*head==NULL)
+    puts("\nVoid graph\n");
 
-    for (tmp = HEAD; tmp != NULL; tmp = tmp->next) {
-        printf("%s: \n", tmp->id_ent);
-        for (tmp_node = tmp->next_node; tmp_node != NULL; tmp_node = tmp_node->next_node)
-            printf("	id_rel: %s; id_dest: %s; \n", tmp_node->id_rel, tmp_node->id_dest);
+  for(current_vertex=*head; current_vertex!=NULL; current_vertex=current_vertex->next){
+    printf("%s: \n", current_vertex->id_ent);
 
+    for(current_node=current_vertex->head_node; current_node!=NULL; current_node=current_node->next){
+      printf("  id_dest: %s; id_rel: %s; \n", current_node->id_dest, current_node->id_rel);
     }
 
-    for(tmp = HEAD; tmp!=NULL; tmp = tmp->next){
-        for(i=0; i< tmp->h_length; i++)
-            printf("ent: %s, rel: %s, num: %d\n", tmp->id_ent, tmp->history[i].id_rel, tmp->history[i].num);
+    printf("#####\n");
+
+    for(current_history=current_vertex->head_history; current_history!=NULL; current_history=current_history->next){
+      printf("  id_rel: %s; num: %d; \n", current_history->id_rel, current_history->num);
     }
 
-    printf("##########\n");
+    printf("#####\n");
+  }
 
-    return;
+  printf("\n#####\n");
+
 }
