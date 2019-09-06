@@ -316,9 +316,11 @@ void addent(vertex_t **head, char *id_ent){
   vertex_t *current_vertex, *next, *new;
 
   if (validVertexExists(head, id_ent))
-        return;
+    return;
 
   else{
+
+    current_vertex = returnValidVertex(head, id_ent);
 
     if (*head == NULL || strcmp(current_vertex->id_ent, id_ent) > 0)
       *head = new_vertex(id_ent, NULL);
@@ -384,7 +386,7 @@ void addrel(vertex_t **head, char *id_orig, char *id_dest, char *id_rel) {
 
   vertex_t *current_vertex, *toBeUpdated;
 
-  node_t *current_node, *tmp;
+  node_t *current_node;
 
   current_vertex = returnValidVertex(head, id_orig);
   toBeUpdated = returnValidVertex(head, id_dest);
@@ -395,7 +397,6 @@ void addrel(vertex_t **head, char *id_orig, char *id_dest, char *id_rel) {
   else {
       for (current_node = current_vertex->head_node; current_node->next != NULL && current_node->valid==true; current_node = current_node->next);
 
-        tmp = current_node;
         if (current_node->valid==false){
           strcpy(current_node->id_dest, id_dest);
           strcpy(current_node->id_rel, id_rel);
