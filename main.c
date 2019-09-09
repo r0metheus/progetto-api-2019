@@ -22,6 +22,7 @@ typedef struct node {
 
 typedef struct vertex {
     char id_ent[MAX];
+    bool valid;
     struct vertex *next;
     struct node *head_node;
     struct history *head_history;
@@ -56,6 +57,8 @@ vertex_t *returnVertex(vertex_t **head, char *id_ent);
 
 node_t *returnValidNode(vertex_t **head, char *father, char *id, char *id_rel);
 
+historyNode_t *returnValidHistory(vertex_t *vertex, char *id_rel);
+
 void addInChrono(char *id_rel);
 
 /* CORE */
@@ -72,6 +75,8 @@ void report(vertex_t **head);
 // DEBUG
 
 void print_graph(vertex_t **head);
+
+int no_report = 0;
 
 chrono_t *chrono_head = NULL;
 
@@ -128,6 +133,7 @@ vertex_t *new_vertex(char *id_ent, vertex_t *next) {
 
     strcpy(new->id_ent, id_ent);
     new->next = next;
+    new->valid = true;
     new->head_node = NULL;
     new->head_history = NULL;
 
@@ -168,12 +174,21 @@ chrono_t *new_chrono(char *id_rel, chrono_t *next) {
 }
 
 
+
+
+
+
+
+
+
+
+
 /* UTILITIES */
 bool vertexExists(vertex_t **head, char *id_ent) {
     vertex_t *current_vertex;
 
     for (current_vertex = *head; current_vertex != NULL; current_vertex = current_vertex->next)
-        if (strcmp(current_vertex->id_ent, id_ent) == 0)
+        if (strcmp(current_vertex->id_ent, id_ent) == 0 && current_vertex->valid)
             return true;
 
     return false;
@@ -183,7 +198,7 @@ vertex_t *returnVertex(vertex_t **head, char *id_ent) {
     vertex_t *current_vertex;
 
     for (current_vertex = *head; current_vertex != NULL; current_vertex = current_vertex->next)
-        if (strcmp(current_vertex->id_ent, id_ent) == 0)
+        if (strcmp(current_vertex->id_ent, id_ent) == 0 && current_vertex->valid)
             return current_vertex;
 
     return NULL;
@@ -251,9 +266,7 @@ void addInChrono(char *id_rel) {
             chrono_head = new_chrono(id_rel, current_chrono);
 
         else {
-            for (current_chrono = chrono_head; current_chrono->next != NULL &&
-                                               strcmp(current_chrono->next->id_rel, id_rel) <=
-                                               0; current_chrono = current_chrono->next);
+            for (current_chrono = chrono_head; current_chrono->next != NULL && strcmp(current_chrono->next->id_rel, id_rel)<=0; current_chrono = current_chrono->next);
 
             new = new_chrono(id_rel, current_chrono->next);
             current_chrono->next = new;
@@ -265,54 +278,105 @@ bool validHistoryExists(vertex_t *vertex, char *id_rel) {
     historyNode_t *current_history;
 
     for (current_history = vertex->head_history; current_history != NULL; current_history = current_history->next)
-        if (strcmp(current_history->id_rel, id_rel) == 0 && current_history->valid)
+        if (strcmp(current_history->id_rel, id_rel) == 0 && current_history->valid && current_history->num>0)
             return true;
 
     return false;
 
 }
 
+historyNode_t *returnValidHistory(vertex_t *vertex, char *id_rel) {
+    historyNode_t *current_history;
+
+    for (current_history = vertex->head_history; current_history != NULL; current_history = current_history->next)
+        if (strcmp(current_history->id_rel, id_rel) == 0 && current_history->valid && current_history->num>0)
+            break;
+
+    if (current_history == NULL)
+        return NULL;
+    else
+        return current_history;
+
+}
+
+
+
+
+
+
+
+
+
+
 
 void updateHistory(vertex_t *vertex, char *id_rel, int update) {
     historyNode_t *current_history;
 
-    if (id_rel == NULL || vertex == NULL)
-        return;
-
     if (validHistoryExists(vertex, id_rel)) {
-        for (current_history = vertex->head_history; current_history != NULL &&
-                                                     strcmp(current_history->id_rel, id_rel) !=
-                                                     0; current_history = current_history->next);
+        current_history = returnValidHistory(vertex, id_rel);
 
-        if (current_history->num + update <= 0 && update == -1)
-            current_history->valid = false;
-        else if (current_history->num + update > 0)
+        if (update == 1) {
             current_history->num += update;
+            return;
+        }
 
+        if (update == -1) {
+            if (current_history->num == 1) {
+                current_history->num += update;
+                current_history->valid = false;
+                return;
+            }
+
+            else {
+                current_history->num += update;
+                return;
+            }
+        }
     } else {
         if (update == -1)
             return;
 
-        if (vertex->head_history == NULL && update == 1)
-            vertex->head_history = new_historyNode(id_rel, NULL, update);
+        else if (update==1){
+            if (vertex->head_history == NULL) {
+                vertex->head_history = new_historyNode(id_rel, NULL, update);
 
-        else {
-            for (current_history = vertex->head_history;
-                 current_history->next != NULL && current_history->valid; current_history = current_history->next);
+                return;
+            }
+
+            for (current_history = vertex->head_history; current_history->next != NULL && current_history->valid; current_history = current_history->next);
 
             if (current_history->next == NULL) {
                 current_history->next = new_historyNode(id_rel, NULL, update);
+
+                return;
             } else if (current_history->valid == false) {
                 strcpy(current_history->id_rel, id_rel);
                 current_history->num = update;
                 current_history->valid = true;
+
+                return;
             }
 
         }
-
     }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* CORE */
 void addent(vertex_t **head, char *id_ent) {
@@ -326,53 +390,53 @@ void addent(vertex_t **head, char *id_ent) {
             *head = new_vertex(id_ent, current_vertex);
 
         else {
-            for (current_vertex = *head; current_vertex->next != NULL && strcmp(current_vertex->next->id_ent, id_ent) <=
-                                                                         0; current_vertex = current_vertex->next);
+            for (current_vertex = *head; current_vertex->next != NULL && strcmp(current_vertex->next->id_ent, id_ent) <=0; current_vertex = current_vertex->next);
 
             new = new_vertex(id_ent, current_vertex->next);
             current_vertex->next = new;
 
         }
     }
-
 }
 
 void delent(vertex_t **head, char *id_ent) {
-    vertex_t *current_vertex, *toDelete, *toDelete_prev, *toDelete_next;
+    vertex_t *current_vertex, *toDelete, *toDelete_prev;
     historyNode_t *current_history;
+    node_t *current_node;
 
     if (*head == NULL || !vertexExists(head, id_ent))
         return;
 
-    else {
+    else{
+        toDelete = returnVertex(head, id_ent);
 
-        for (current_vertex = *head; current_vertex != NULL && strcmp(current_vertex->id_ent, id_ent) !=
-                                                               0; current_vertex = current_vertex->next) {
+        // ELIMINO IN OGNI VERTICE LE RELAZIONI CHE HANNO COME DESTINAZIONE IL VERTICE DA ELIMINARE
+        for(current_vertex = *head; current_vertex!=NULL; current_vertex = current_vertex->next)
+            for(current_node = current_vertex->head_node; current_node!=NULL; current_node = current_node->next)
+                if(strcmp(current_node->id_dest, id_ent)==0)
+                    current_node->valid = false;
+
+
+        // ELIMINO OGNI RELAZIONE CHE ESCE DAL VERTICE DA ELIMINARE
+
+        for(current_vertex = *head; current_vertex!=NULL; current_vertex = current_vertex->next)
+            for(current_history = current_vertex->head_history; current_history!=NULL; current_history = current_history->next)
+                delrel(head, toDelete->id_ent, current_vertex->id_ent, current_history->id_rel);
+
+
+        // ELIMINO IL VERTICE INCRIMINATO
+
+        for(current_vertex = *head; current_vertex!=NULL && strcmp(current_vertex->id_ent, id_ent)!=0; current_vertex = current_vertex->next)
             toDelete_prev = current_vertex;
-        }
-
-        toDelete = current_vertex;
-        toDelete_next = current_vertex->next;
-
-        for (current_vertex = *head; current_vertex != NULL; current_vertex = current_vertex->next) {
-            if (current_vertex->head_history == NULL)
-                continue;
-            else {
-                for (current_history = current_vertex->head_history;
-                     current_history != NULL; current_history = current_history->next)
-                    if (current_history->valid)
-                        delrel(head, id_ent, current_vertex->id_ent, current_history->id_rel);
-            }
-        }
 
         if (toDelete == *head) {
-            *head = toDelete_next;
+            *head = toDelete->next;
             free(toDelete);
 
             return;
         }
 
-        toDelete_prev->next = toDelete_next;
+        toDelete_prev->next = toDelete->next;
 
         free(toDelete);
 
@@ -381,7 +445,6 @@ void delent(vertex_t **head, char *id_ent) {
 }
 
 void addrel(vertex_t **head, char *id_orig, char *id_dest, char *id_rel) {
-    addInChrono(id_rel);
 
     if (!vertexExists(head, id_orig))
         return;
@@ -389,33 +452,38 @@ void addrel(vertex_t **head, char *id_orig, char *id_dest, char *id_rel) {
         return;
     else if (validRelExists(head, id_orig, id_dest, id_rel))
         return;
-    else if (*head == NULL || id_orig == NULL || id_dest == NULL || id_rel == NULL)
-        return;
+
+    addInChrono(id_rel);
 
     vertex_t *current_vertex, *toBeUpdated;
-
     node_t *current_node;
 
     current_vertex = returnVertex(head, id_orig);
     toBeUpdated = returnVertex(head, id_dest);
 
+    updateHistory(toBeUpdated, id_rel, 1);
+
     if (current_vertex->head_node == NULL) {
         current_vertex->head_node = new_node(id_rel, id_dest, NULL);
     } else {
-        for (current_node = current_vertex->head_node;
-             current_node->next != NULL && current_node->valid; current_node = current_node->next);
+        for (current_node = current_vertex->head_node; current_node->next != NULL && current_node->valid; current_node = current_node->next);
 
-        if (!current_node->valid) {
+        if (current_node->next == NULL && current_node->valid) {
+            current_node->next = new_node(id_rel, id_dest, NULL);
+
+            return;
+        }
+
+        else if (!current_node->valid) {
             strcpy(current_node->id_dest, id_dest);
             strcpy(current_node->id_rel, id_rel);
             current_node->valid = true;
-        } else if (current_node->next == NULL) {
-            current_node->next = new_node(id_rel, id_dest, NULL);
+
+            return;
         }
 
-    }
 
-    updateHistory(toBeUpdated, id_rel, 1);
+    }
 
 }
 
@@ -432,9 +500,10 @@ void delrel(vertex_t **head, char *id_orig, char *id_dest, char *id_rel) {
     vertex_t *toBeUpdated = returnVertex(head, id_dest);;
     node_t *current_node = returnValidNode(head, id_orig, id_dest, id_rel);
 
+    updateHistory(toBeUpdated, id_rel, -1);
+
     current_node->valid = false;
 
-    updateHistory(toBeUpdated, id_rel, -1);
 }
 
 void report(vertex_t **head) {
@@ -456,18 +525,16 @@ void report(vertex_t **head) {
     for (current_chrono = chrono_head; current_chrono != NULL; current_chrono = current_chrono->next) {
 
         for (current_vertex = *head; current_vertex != NULL; current_vertex = current_vertex->next)
-            for (current_history = current_vertex->head_history;
-                 current_history != NULL; current_history = current_history->next)
-                if (strcmp(current_history->id_rel, current_chrono->id_rel) == 0 && current_history->num > max)
+            for (current_history = current_vertex->head_history; current_history != NULL; current_history = current_history->next)
+                if (strcmp(current_history->id_rel, current_chrono->id_rel) == 0 && current_history->num > max && current_history->valid)
                     max = current_history->num;
 
         if (max == 0)
             continue;
         printf("%s ", current_chrono->id_rel);
         for (current_vertex = *head; current_vertex != NULL; current_vertex = current_vertex->next)
-            for (current_history = current_vertex->head_history;
-                 current_history != NULL; current_history = current_history->next)
-                if (strcmp(current_history->id_rel, current_chrono->id_rel) == 0 && current_history->num == max)
+            for (current_history = current_vertex->head_history; current_history != NULL; current_history = current_history->next)
+                if (strcmp(current_history->id_rel, current_chrono->id_rel) == 0 && current_history->num == max && current_history->valid)
                     printf("%s ", current_vertex->id_ent);
 
         printf("%d; ", max);
@@ -476,6 +543,7 @@ void report(vertex_t **head) {
     }
 
     printf("\n");
+
 
     //print_graph(head);
 
@@ -493,7 +561,8 @@ void print_graph(vertex_t **head) {
     historyNode_t *current_history;
     chrono_t *current_chrono;
 
-    printf("##############################################################################################################\n");
+    no_report += 1;
+    printf("report no. %d ##############################################################################################################\n", no_report);
 
     if (*head == NULL)
         puts("\nVoid graph\n");
@@ -501,13 +570,16 @@ void print_graph(vertex_t **head) {
     for (current_vertex = *head; current_vertex != NULL; current_vertex = current_vertex->next) {
         printf("%s:\n", current_vertex->id_ent);
 
-        printf("history for %s\n", current_vertex->id_ent);
-        for (current_history = current_vertex->head_history; current_history != NULL; current_history = current_history->next)
-            printf("- id_rel: %s; num: %d; valid: %d;\n", current_history->id_rel, current_history->num, current_history->valid);
+        printf("    history for %s\n", current_vertex->id_ent);
+        for (current_history = current_vertex->head_history;
+             current_history != NULL; current_history = current_history->next)
+            printf("        - id_rel: %s; num: %d; valid: %d;\n", current_history->id_rel, current_history->num,
+                   current_history->valid);
 
-        printf("nodes for %s\n", current_vertex->id_ent);
-        for(current_node = current_vertex->head_node; current_node != NULL; current_node = current_node->next)
-            printf("- id_rel: %s; id_dest: %s; valid: %d; \n", current_node->id_rel, current_node->id_dest, current_node->valid);
+        printf("    nodes for %s\n", current_vertex->id_ent);
+        for (current_node = current_vertex->head_node; current_node != NULL; current_node = current_node->next)
+            printf("        - id_rel: %s; id_dest: %s; valid: %d; \n", current_node->id_rel, current_node->id_dest,
+                   current_node->valid);
 
     }
 
