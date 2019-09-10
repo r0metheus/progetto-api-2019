@@ -493,8 +493,8 @@ void report(vertex_t **head, chrono_t **chrono_head) {
 
             max = 0;
         }
-        printf("\b\n");
-        //puts("");
+        //printf("\b\n");
+        puts("");
 
 
 
